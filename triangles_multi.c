@@ -19,6 +19,7 @@ typedef struct Struct {
     int counter;
     int num_threads;
     int id_thread;
+    pthread_mutex_t lock;
 } makeStruct;
 
 int main(int argc, char* argv[])
@@ -32,7 +33,7 @@ int main(int argc, char* argv[])
     pthread_attr_t pthread_custom_attr;
     time_t start_multi_pthreads, end_multi_pthreads;
 
-    if ((file = fopen("com-Youtube.mtx", "r")) == NULL) {
+    if ((file = fopen("../belgium_osm.mtx", "r")) == NULL) {
         perror("Error in file open");
         exit(1);
     }
@@ -71,7 +72,6 @@ int main(int argc, char* argv[])
     coo2csc(csc_row, csc_col, (uint32_t*)I, (uint32_t*)J, nz, N, 1);
 
     //multithreading
-    //p = (parm*)malloc(sizeof(parm) * n);
 
     makeStruct* arguments;
     arguments = (makeStruct*)malloc(sizeof(makeStruct) * NUMOFTHREADS);
@@ -81,11 +81,16 @@ int main(int argc, char* argv[])
     arguments->nz = nz;
     arguments->N = N;
     arguments->counter = 0;
+    arguments->num_threads = NUMOFTHREADS;
+
+    pthread_mutex_t locked = PTHREAD_MUTEX_INITIALIZER;
+    arguments->lock = locked;
 
     start_multi_pthreads = clock();
     threads = (pthread_t*)malloc(NUMOFTHREADS * sizeof(*threads));
     pthread_attr_init(&pthread_custom_attr);
     for (int i = 0; i < NUMOFTHREADS; i++) {
+        arguments->id_thread = i;
         pthread_create(&threads[i], NULL, multi_counting, arguments);
     }
 
@@ -94,7 +99,7 @@ int main(int argc, char* argv[])
     }
     end_multi_pthreads = clock();
 
-    //printf("to count %d triangles through %d columns\n", seq_counting(csc_row, csc_col, nz, N), N);
+    printf("to count %d triangles through %d columns\n", seq_counting(csc_row, csc_col, nz, N), N);
     printf("Multi threading %d in %ld seconds\n",
         arguments->counter, (end_multi_pthreads - start_multi_pthreads) / CLOCKS_PER_SEC);
     free(csc_row);
