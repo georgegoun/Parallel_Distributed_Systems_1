@@ -16,10 +16,11 @@ typedef struct Struct {
     uint32_t* csc_col;
     uint32_t nz;
     uint32_t N;
-    int counter;
+    int* counter;
     int num_threads;
     int id_thread;
-    pthread_mutex_t lock;
+    pthread_mutex_t mutex;
+    pthread_cond_t modif;
 } makeStruct;
 
 int main(int argc, char* argv[])
@@ -74,34 +75,50 @@ int main(int argc, char* argv[])
     //multithreading
 
     makeStruct* arguments;
+
     arguments = (makeStruct*)malloc(sizeof(makeStruct) * NUMOFTHREADS);
 
     arguments->csc_row = csc_row;
     arguments->csc_col = csc_col;
     arguments->nz = nz;
     arguments->N = N;
-    arguments->counter = 0;
+
+    int* count;
+    count = malloc(sizeof(int));
+    *count = 0;
+    arguments->counter = count;
+
     arguments->num_threads = NUMOFTHREADS;
 
-    pthread_mutex_t locked = PTHREAD_MUTEX_INITIALIZER;
-    arguments->lock = locked;
+    pthread_mutex_t mutex_temp = PTHREAD_MUTEX_INITIALIZER;
+    arguments->mutex = mutex_temp;
+    pthread_cond_t modified = PTHREAD_COND_INITIALIZER;
+    arguments->modif = modified;
+    // if (pthread_mutex_init(&arguments->lock, NULL) != 0) {
+    //     printf("\n mutex init has failed\n");
+    //     return 1;
+    // }
 
-    start_multi_pthreads = clock();
+        start_multi_pthreads = clock();
     threads = (pthread_t*)malloc(NUMOFTHREADS * sizeof(*threads));
     pthread_attr_init(&pthread_custom_attr);
-    for (int i = 0; i < NUMOFTHREADS; i++) {
-        arguments->id_thread = i;
-        pthread_create(&threads[i], NULL, multi_counting, arguments);
-    }
 
+    for (int i = 0; i < NUMOFTHREADS; i++) {
+        arguments[i].id_thread = i;
+        printf("thread: %d\n", arguments[i].id_thread);
+
+        pthread_create(&threads[i], NULL, multi_counting, (void*)(&arguments[i]));
+    }
+    printf("ok\n");
     for (int i = 0; i < NUMOFTHREADS; i++) {
         pthread_join(threads[i], NULL);
     }
+
     end_multi_pthreads = clock();
 
     printf("to count %d triangles through %d columns\n", seq_counting(csc_row, csc_col, nz, N), N);
-    printf("Multi threading %d in %ld seconds\n",
-        arguments->counter, (end_multi_pthreads - start_multi_pthreads) / CLOCKS_PER_SEC);
+    printf("\nMultithreading %d in %ld seconds\n",
+        (*(arguments->counter)), (end_multi_pthreads - start_multi_pthreads) / CLOCKS_PER_SEC);
     free(csc_row);
     free(csc_col);
 

@@ -12,8 +12,8 @@ int seq_counting(uint32_t* csc_row,
     time_t start, end;
 
     int counter = 0;
-    start = clock();
     printf("Algorithm started for %d columns...\n", N);
+    start = clock();
     for (int i = 0; i < N; i++) {
 
         //fill arr1 with col index values
@@ -42,7 +42,7 @@ int seq_counting(uint32_t* csc_row,
             }
             free(arr2);
         }
-        }
+    }
     end = clock();
     printf("Execution time is %ld seconds\n", ((end - start) / CLOCKS_PER_SEC));
     return counter;
