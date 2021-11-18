@@ -12,7 +12,7 @@ int seq_counting(uint32_t* csc_row,
     time_t start, end;
 
     int counter = 0;
-    printf("Algorithm started for %d columns...\n", N);
+    printf("Algorithm started for %d columns...\n\n", N);
     start = clock();
     for (int i = 0; i < N; i++) {
 
@@ -44,6 +44,6 @@ int seq_counting(uint32_t* csc_row,
         }
     }
     end = clock();
-    printf("Execution time is %ld seconds\n", ((end - start) / CLOCKS_PER_SEC));
+    printf("Sequential execution time is %ld seconds\n", ((end - start) / CLOCKS_PER_SEC));
     return counter;
 }

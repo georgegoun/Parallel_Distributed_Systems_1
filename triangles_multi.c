@@ -32,9 +32,9 @@ int main(int argc, char* argv[])
     int i, *I, *J;
     pthread_t* threads;
     pthread_attr_t pthread_custom_attr;
-    time_t start_multi_pthreads, end_multi_pthreads;
-
-    if ((file = fopen("../belgium_osm.mtx", "r")) == NULL) {
+    clock_t start_multi_pthreads, end_multi_pthreads;
+    //com-Youtube, belgium_osm.mtx;
+    if ((file = fopen("../com-Youtube.mtx", "r")) == NULL) {
         perror("Error in file open");
         exit(1);
     }
@@ -78,20 +78,14 @@ int main(int argc, char* argv[])
 
     arguments = (makeStruct*)malloc(sizeof(makeStruct) * NUMOFTHREADS);
 
-    arguments->csc_row = csc_row;
-    arguments->csc_col = csc_col;
-    arguments->nz = nz;
-    arguments->N = N;
-
     int* count;
     count = malloc(sizeof(int));
     *count = 0;
-    arguments->counter = count;
 
-    arguments->num_threads = NUMOFTHREADS;
+    ;
 
-    pthread_mutex_t mutex_temp = PTHREAD_MUTEX_INITIALIZER;
-    arguments->mutex = mutex_temp;
+    pthread_mutex_init(&(arguments->mutex), NULL);
+
     pthread_cond_t modified = PTHREAD_COND_INITIALIZER;
     arguments->modif = modified;
     // if (pthread_mutex_init(&arguments->lock, NULL) != 0) {
@@ -99,17 +93,22 @@ int main(int argc, char* argv[])
     //     return 1;
     // }
 
-        start_multi_pthreads = clock();
+    start_multi_pthreads = clock();
     threads = (pthread_t*)malloc(NUMOFTHREADS * sizeof(*threads));
     pthread_attr_init(&pthread_custom_attr);
 
     for (int i = 0; i < NUMOFTHREADS; i++) {
         arguments[i].id_thread = i;
-        printf("thread: %d\n", arguments[i].id_thread);
-
+        arguments[i].csc_row = csc_row;
+        arguments[i].csc_col = csc_col;
+        arguments[i].nz = nz;
+        arguments[i].N = N;
+        arguments[i].num_threads = NUMOFTHREADS;
+        arguments[i].counter = count;
+        pthread_mutex_init(&(arguments[i].mutex), NULL);
         pthread_create(&threads[i], NULL, multi_counting, (void*)(&arguments[i]));
     }
-    printf("ok\n");
+
     for (int i = 0; i < NUMOFTHREADS; i++) {
         pthread_join(threads[i], NULL);
     }
@@ -118,58 +117,9 @@ int main(int argc, char* argv[])
 
     printf("to count %d triangles through %d columns\n", seq_counting(csc_row, csc_col, nz, N), N);
     printf("\nMultithreading %d in %ld seconds\n",
-        (*(arguments->counter)), (end_multi_pthreads - start_multi_pthreads) / CLOCKS_PER_SEC);
+        (*(arguments->counter)), ((end_multi_pthreads - start_multi_pthreads) / CLOCKS_PER_SEC));
     free(csc_row);
     free(csc_col);
 
     return 0;
 }
-
-// void* multis_counting(void* args)
-// {
-
-//     makeStruct* arguments = (makeStruct*)args;
-
-//     //typedef arguments->csc_row csc_row;
-
-//     //int counter = 0;
-
-//     //simple calculation
-
-//     //uint32_t csc_row[] = { 1, 4, 0, 4, 3, 2, 0, 1 };
-//     //uint32_t csc_col[] = { 0, 2, 4, 5, 6, 8 };
-
-//     for (int i = 0; i < arguments->N; i++) {
-
-//         //fill arr1 with col index values
-//         int arr1_length = arguments->csc_col[i + 1] - arguments->csc_col[i];
-//         uint32_t* arr1 = (uint32_t*)malloc(arr1_length * sizeof(uint32_t));
-//         for (int k = arguments->csc_col[i], ii = 0; k < arguments->csc_col[i + 1]; k++, ii++) {
-//             arr1[ii] = arguments->csc_row[k];
-//         }
-
-//         for (int j = arguments->csc_col[i], k = arguments->csc_col[i + 1]; j < k; j++) {
-//             int row_new = arguments->csc_row[j];
-
-//             int arr2_length = arguments->csc_col[row_new + 1] - arguments->csc_col[row_new];
-//             uint32_t* arr2 = (uint32_t*)malloc(arr2_length * sizeof(uint32_t));
-//             for (int row_nest = arguments->csc_col[row_new], row_nest_up = arguments->csc_col[row_new + 1], iii = 0; row_nest < row_nest_up; row_nest++, iii++) {
-//                 arr2[iii] = arguments->csc_row[row_nest];
-//             }
-
-//             //check if array has the same numbers
-//             for (int temp_i = 0; temp_i < arr1_length; temp_i++) {
-//                 for (int temp_j = 0; temp_j < arr2_length; temp_j++) {
-//                     if (arr1[temp_i] == arr2[temp_j]) {
-//                         arguments->counter++;
-//                         break;
-//                     }
-//                 }
-//             }
-//             free(arr2);
-//         }
-//         free(arr1);
-//         //printf("col: %d\n", i);
-//     }
-//     return 0;
-// }
