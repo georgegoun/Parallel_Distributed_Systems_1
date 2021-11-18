@@ -8,13 +8,11 @@
 typedef struct Struct {
     uint32_t* csc_row;
     uint32_t* csc_col;
-    uint32_t nz;
     uint32_t N;
     int* counter;
     int num_threads;
     int id_thread;
     pthread_mutex_t* mutex;
-    pthread_cond_t modif;
 
 } makeStruct;
 
@@ -31,11 +29,16 @@ void* multi_counting(void* args)
     //printf("ThreadID %d: Just started i %d for thread %d\n", (int)pthread_self(), i, arg->id_thread);
 
     //seperated i in numofthreads
-    for (int i = ((arg->id_thread) * (arg->N / arg->num_threads)); i < ((arg->id_thread == arg->num_threads - 1) ? (arg->N) : ((arg->id_thread + 1) * (arg->N / (arg->num_threads)))); i++) {
+    int i = ((arg->id_thread) * (arg->N / arg->num_threads));
+    int max = ((arg->id_thread == arg->num_threads - 1) ? (arg->N) : ((arg->id_thread + 1) * (arg->N / (arg->num_threads))));
+    pthread_mutex_lock((arg->mutex));
+
+    for (; i < max; i++) {
         //fill arr1 with col index values
-        //printf("ThreadID %d: Just started i %d for thread %d\n", (int)pthread_self(), i, arg->id_thread);
+        //printf("ThreadID %d for i: %d\n", arg->id_thread, i);
 
         int arr1_length = arg->csc_col[i + 1] - arg->csc_col[i];
+        //int arr1[arr1_length];
         uint32_t* arr1 = (uint32_t*)malloc(arr1_length * sizeof(uint32_t));
         for (int k = arg->csc_col[i], ii = 0; k < arg->csc_col[i + 1]; k++, ii++) {
             arr1[ii] = arg->csc_row[k];
@@ -55,11 +58,12 @@ void* multi_counting(void* args)
             for (int temp_i = 0; temp_i < arr1_length; temp_i++) {
                 for (int temp_j = 0; temp_j < arr2_length; temp_j++) {
                     if (arr1[temp_i] == arr2[temp_j]) {
-                        //printf("Thread %d running and counter is %d\n", (int)pthread_self(), (*(arg->counter)));
 
-                        pthread_mutex_lock((arg->mutex));
+                        //pthread_mutex_lock((arg->mutex));
                         (*(arg->counter))++;
-                        pthread_mutex_unlock((arg->mutex));
+                        //printf("Thread %d running and counter is %d\n", arg->id_thread, (*(arg->counter)));
+
+                        //pthread_mutex_unlock((arg->mutex));
                         break;
                     }
                 }
@@ -68,10 +72,8 @@ void* multi_counting(void* args)
             free(arr2);
         }
         free(arr1);
-        //printf("col: %d\n", i);
-        //pthread_mutex_unlock(&(arg->mutex));
     }
-    //pthread_mutex_unlock(&(arg->mutex));
+    pthread_mutex_unlock((arg->mutex));
 
     pthread_exit(NULL);
 }

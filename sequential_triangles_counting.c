@@ -18,6 +18,7 @@ int seq_counting(uint32_t* csc_row,
 
         //fill arr1 with col index values
         int arr1_length = csc_col[i + 1] - csc_col[i];
+        //int arr1[arr1_length];
         uint32_t* arr1 = (uint32_t*)malloc(arr1_length * sizeof(uint32_t));
         for (int k = csc_col[i], ii = 0; k < csc_col[i + 1]; k++, ii++) {
             arr1[ii] = csc_row[k];
@@ -42,6 +43,7 @@ int seq_counting(uint32_t* csc_row,
             }
             free(arr2);
         }
+        free(arr1);
     }
     end = clock();
     printf("Sequential execution time is %f seconds\n", ((double)(end - start) / CLOCKS_PER_SEC));

@@ -9,18 +9,17 @@
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
-#define NUMOFTHREADS 100
+
+#define NUMOFTHREADS 3
 
 typedef struct Struct {
     uint32_t* csc_row;
     uint32_t* csc_col;
-    uint32_t nz;
     uint32_t N;
     int* counter;
     int num_threads;
     int id_thread;
     pthread_mutex_t* mutex;
-    pthread_cond_t modif;
 } makeStruct;
 
 int main(int argc, char* argv[])
@@ -32,10 +31,9 @@ int main(int argc, char* argv[])
     int i, *I, *J;
     pthread_t* threads;
 
-    pthread_attr_t pthread_custom_attr;
     clock_t start_multi_pthreads, end_multi_pthreads;
     //com-Youtube, belgium_osm.mtx;
-    if ((file = fopen("../com-Youtube.mtx", "r")) == NULL) {
+    if ((file = fopen("../belgium_osm.mtx", "r")) == NULL) {
         perror("Error in file open");
         exit(1);
     }
@@ -85,28 +83,23 @@ int main(int argc, char* argv[])
     count = malloc(sizeof(int));
     *count = 0;
 
-    //pthread_mutex_init(&(arguments->mutex), NULL);
-
-    pthread_cond_t modified = PTHREAD_COND_INITIALIZER;
-    arguments->modif = modified;
     // if (pthread_mutex_init(&arguments->lock, NULL) != 0) {
     //     printf("\n mutex init has failed\n");
     //     return 1;
     // }
 
-    start_multi_pthreads = clock();
     threads = (pthread_t*)malloc(NUMOFTHREADS * sizeof(*threads));
-    pthread_attr_init(&pthread_custom_attr);
 
     pthread_mutex_t* mtx;
     mtx = malloc(sizeof(pthread_mutex_t));
     pthread_mutex_init(mtx, NULL);
 
+    start_multi_pthreads = clock();
+
     for (int i = 0; i < NUMOFTHREADS; i++) {
         arguments[i].id_thread = i;
         arguments[i].csc_row = csc_row;
         arguments[i].csc_col = csc_col;
-        arguments[i].nz = nz;
         arguments[i].N = N;
         arguments[i].num_threads = NUMOFTHREADS;
         arguments[i].counter = count;
@@ -121,7 +114,6 @@ int main(int argc, char* argv[])
     for (int i = 0; i < NUMOFTHREADS; i++) {
         pthread_join(threads[i], NULL);
     }
-
     end_multi_pthreads = clock();
 
     printf("\nMultithreading %d in %f seconds\n",
