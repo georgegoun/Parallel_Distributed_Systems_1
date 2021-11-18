@@ -13,16 +13,17 @@ typedef struct Struct {
     int* counter;
     int num_threads;
     int id_thread;
-    pthread_mutex_t mutex;
+    pthread_mutex_t* mutex;
     pthread_cond_t modif;
 
 } makeStruct;
 
 void* multi_counting(void* args)
 {
+
     makeStruct* arg = (makeStruct*)args;
 
-    pthread_mutex_lock(&(arg->mutex));
+    //pthread_mutex_lock(&(arg->mutex));
 
     //tried stepping up num_thread++ steps but too slow
     //for (int i = arg->id_thread; i < arg->N; i += arg->num_threads) {
@@ -52,12 +53,13 @@ void* multi_counting(void* args)
             //important
 
             for (int temp_i = 0; temp_i < arr1_length; temp_i++) {
-
                 for (int temp_j = 0; temp_j < arr2_length; temp_j++) {
-
                     if (arr1[temp_i] == arr2[temp_j]) {
-                        (*(arg->counter))++;
                         //printf("Thread %d running and counter is %d\n", (int)pthread_self(), (*(arg->counter)));
+
+                        pthread_mutex_lock((arg->mutex));
+                        (*(arg->counter))++;
+                        pthread_mutex_unlock((arg->mutex));
                         break;
                     }
                 }
@@ -69,7 +71,7 @@ void* multi_counting(void* args)
         //printf("col: %d\n", i);
         //pthread_mutex_unlock(&(arg->mutex));
     }
-    pthread_mutex_unlock(&(arg->mutex));
+    //pthread_mutex_unlock(&(arg->mutex));
 
     pthread_exit(NULL);
 }

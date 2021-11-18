@@ -9,7 +9,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
-#define NUMOFTHREADS 3
+#define NUMOFTHREADS 100
 
 typedef struct Struct {
     uint32_t* csc_row;
@@ -19,7 +19,7 @@ typedef struct Struct {
     int* counter;
     int num_threads;
     int id_thread;
-    pthread_mutex_t mutex;
+    pthread_mutex_t* mutex;
     pthread_cond_t modif;
 } makeStruct;
 
@@ -31,6 +31,7 @@ int main(int argc, char* argv[])
     int M, N, nz;
     int i, *I, *J;
     pthread_t* threads;
+
     pthread_attr_t pthread_custom_attr;
     clock_t start_multi_pthreads, end_multi_pthreads;
     //com-Youtube, belgium_osm.mtx;
@@ -44,7 +45,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    printf(" %d\n", mm_is_pattern(matcode));
+    // printf(" %d\n", mm_is_pattern(matcode));
 
     /* find out size of sparse matrix .... */
 
@@ -71,6 +72,8 @@ int main(int argc, char* argv[])
     uint32_t* csc_col = (uint32_t*)malloc((N + 1) * sizeof(uint32_t));
 
     coo2csc(csc_row, csc_col, (uint32_t*)I, (uint32_t*)J, nz, N, 1);
+    int seq_triangles = seq_counting(csc_row, csc_col, nz, N);
+    printf("to count %d triangles through %d columns\n", seq_triangles, N);
 
     //multithreading
 
@@ -82,9 +85,7 @@ int main(int argc, char* argv[])
     count = malloc(sizeof(int));
     *count = 0;
 
-    ;
-
-    pthread_mutex_init(&(arguments->mutex), NULL);
+    //pthread_mutex_init(&(arguments->mutex), NULL);
 
     pthread_cond_t modified = PTHREAD_COND_INITIALIZER;
     arguments->modif = modified;
@@ -97,6 +98,10 @@ int main(int argc, char* argv[])
     threads = (pthread_t*)malloc(NUMOFTHREADS * sizeof(*threads));
     pthread_attr_init(&pthread_custom_attr);
 
+    pthread_mutex_t* mtx;
+    mtx = malloc(sizeof(pthread_mutex_t));
+    pthread_mutex_init(mtx, NULL);
+
     for (int i = 0; i < NUMOFTHREADS; i++) {
         arguments[i].id_thread = i;
         arguments[i].csc_row = csc_row;
@@ -105,7 +110,11 @@ int main(int argc, char* argv[])
         arguments[i].N = N;
         arguments[i].num_threads = NUMOFTHREADS;
         arguments[i].counter = count;
-        pthread_mutex_init(&(arguments[i].mutex), NULL);
+
+        arguments[i].mutex = mtx;
+        //wrong initialize
+        //pthread_mutex_init((arguments[i].mutex), NULL);
+        // printf("Mutex: %d for i %d\n", (int)(arguments[i].mutex), i);
         pthread_create(&threads[i], NULL, multi_counting, (void*)(&arguments[i]));
     }
 
@@ -115,9 +124,8 @@ int main(int argc, char* argv[])
 
     end_multi_pthreads = clock();
 
-    printf("to count %d triangles through %d columns\n", seq_counting(csc_row, csc_col, nz, N), N);
-    printf("\nMultithreading %d in %ld seconds\n",
-        (*(arguments->counter)), ((end_multi_pthreads - start_multi_pthreads) / CLOCKS_PER_SEC));
+    printf("\nMultithreading %d in %f seconds\n",
+        (*(arguments->counter)), ((double)(end_multi_pthreads - start_multi_pthreads) / CLOCKS_PER_SEC));
     free(csc_row);
     free(csc_col);
 
