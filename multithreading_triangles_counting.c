@@ -29,9 +29,10 @@ void* multi_counting(void* args)
     //printf("ThreadID %d: Just started i %d for thread %d\n", (int)pthread_self(), i, arg->id_thread);
 
     //seperated i in numofthreads
+    pthread_mutex_lock((arg->mutex));
+
     int i = ((arg->id_thread) * (arg->N / arg->num_threads));
     int max = ((arg->id_thread == arg->num_threads - 1) ? (arg->N) : ((arg->id_thread + 1) * (arg->N / (arg->num_threads))));
-    pthread_mutex_lock((arg->mutex));
 
     for (; i < max; i++) {
         //fill arr1 with col index values

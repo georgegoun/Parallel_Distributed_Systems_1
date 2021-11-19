@@ -1,7 +1,10 @@
 #include "coo2csc.h"
 #include "mmio.h"
 #include "multithreading_triangles_counting.h"
+#include "opencilk_triangles_counting.h"
+//#include "openmp_triangles_counting.h"
 #include "sequential_triangles_counting.h"
+#include "timer.h"
 #include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -9,8 +12,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
-
-#define NUMOFTHREADS 3
+#define NUMOFTHREADS 5
 
 typedef struct Struct {
     uint32_t* csc_row;
@@ -29,11 +31,17 @@ int main(int argc, char* argv[])
     int ret_code;
     int M, N, nz;
     int i, *I, *J;
+
     pthread_t* threads;
 
-    clock_t start_multi_pthreads, end_multi_pthreads;
+    //timers
+    struct timespec start_opencilk = { 0 }, stop_opencilk = { 0 };
+    struct timespec start_pthreads = { 0 }, stop_pthreads = { 0 };
+    struct timespec start_seq = { 0 }, stop_seq = { 0 };
+    //struct timespec start_openmp = { 0 }, stop_openmp = { 0 };
+
     //com-Youtube, belgium_osm.mtx;
-    if ((file = fopen("../belgium_osm.mtx", "r")) == NULL) {
+    if ((file = fopen("../com-Youtube.mtx", "r")) == NULL) {
         perror("Error in file open");
         exit(1);
     }
@@ -70,10 +78,18 @@ int main(int argc, char* argv[])
     uint32_t* csc_col = (uint32_t*)malloc((N + 1) * sizeof(uint32_t));
 
     coo2csc(csc_row, csc_col, (uint32_t*)I, (uint32_t*)J, nz, N, 1);
-    int seq_triangles = seq_counting(csc_row, csc_col, nz, N);
-    printf("to count %d triangles through %d columns\n", seq_triangles, N);
 
-    //multithreading
+    start_seq = timerStart(start_seq);
+
+    int seq_triangles = seq_counting(csc_row, csc_col, nz, N);
+
+    stop_seq = timerStop(stop_seq);
+
+    printf("\nSequential %d triangles through %d columns in %lf seconds\n", seq_triangles, N, timeDif(start_seq, stop_seq));
+
+    //Multithreading
+
+    //Pthreads
 
     makeStruct* arguments;
 
@@ -94,7 +110,7 @@ int main(int argc, char* argv[])
     mtx = malloc(sizeof(pthread_mutex_t));
     pthread_mutex_init(mtx, NULL);
 
-    start_multi_pthreads = clock();
+    start_pthreads = timerStart(start_pthreads);
 
     for (int i = 0; i < NUMOFTHREADS; i++) {
         arguments[i].id_thread = i;
@@ -114,10 +130,27 @@ int main(int argc, char* argv[])
     for (int i = 0; i < NUMOFTHREADS; i++) {
         pthread_join(threads[i], NULL);
     }
-    end_multi_pthreads = clock();
+    stop_pthreads = timerStop(stop_pthreads);
 
-    printf("\nMultithreading %d in %f seconds\n",
-        (*(arguments->counter)), ((double)(end_multi_pthreads - start_multi_pthreads) / CLOCKS_PER_SEC));
+    printf("\nMultithreading %d triangles in %lf seconds\n",
+        (*(arguments->counter)), timeDif(start_pthreads, stop_pthreads));
+
+    //OpenCilk
+
+    start_opencilk = timerStart(start_opencilk);
+    int opencilk_triangles = opencilk_counting(csc_row, csc_col, nz, N);
+    stop_opencilk = timerStop(stop_opencilk);
+    printf("\nOpenCilk %d triangles through %d columns in %lf seconds\n", opencilk_triangles, N, timeDif(start_opencilk, stop_opencilk));
+
+    //OpenMP
+
+    /*
+    start_openmp = timerStart(start_openmp);
+    int openmp_triangles = openmp_counting(csc_row, csc_col, nz, N);
+    stop_openmp = timerStop(stop_openmp);
+    printf("\nOpenMP %d triangles through %d columns in %lf seconds\n", openmp_triangles, N, timeDif(start_opencilk, stop_opencilk));
+    */
+
     free(csc_row);
     free(csc_col);
 
