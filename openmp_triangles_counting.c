@@ -9,11 +9,11 @@ int openmp_counting(uint32_t* csc_row,
     uint32_t nz,
     uint32_t N)
 {
-
     int counter = 0;
     //printf("Algorithm started for %d columns...\n\n", N);
 
-#pragma omp parallel for
+#pragma omp parallel for reduction(max \
+                                   : N) num_threads(100)
     for (int i = 0; i < N; i++) {
 
         //fill arr1 with col index values
@@ -36,6 +36,7 @@ int openmp_counting(uint32_t* csc_row,
             for (int temp_i = 0; temp_i < arr1_length; temp_i++) {
                 for (int temp_j = 0; temp_j < arr2_length; temp_j++) {
                     if (arr1[temp_i] == arr2[temp_j]) {
+#pragma omp critical
                         counter++;
                         break;
                     }

@@ -2,6 +2,10 @@
   "files.associations": {
     "stdlib.h": "c",
     "time.h": "c",
-    "stdint.h": "c"
+    "stdint.h": "c",
+    "opencilk_triangles_counting.h": "c",
+    "sequential_triangles_counting.h": "c",
+    "multithreading_triangles_counting.h": "c",
+    "openmp_triangles_counting.h": "c"
   }
 }
