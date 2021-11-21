@@ -1,7 +1,7 @@
-#include "coo2csc.h"
-#include "mmio.h"
+#include "../include/coo2csc.h"
+#include "../include/mmio.h"
 
-#include "timer.h"
+#include "../include/timer.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,18 +13,18 @@
 #ifdef METHOD
 
 #if METHOD == 1
-#include "sequential_triangles_counting.h"
+#include "../include/sequential_triangles_counting.h"
 
 #elif METHOD == 2
-#include "multithreading_triangles_counting.h"
+#include "../include/multithreading_triangles_counting.h"
 #include <pthread.h>
 
 #elif METHOD == 3
-#include "opencilk_triangles_counting.h"
+#include "../include/opencilk_triangles_counting.h"
 #endif
 
 #elif METHOD == 4
-#include "openmp_triangles_counting.h"
+#include "../include/openmp_triangles_counting.h"
 #endif
 
 typedef struct Struct {
@@ -70,7 +70,6 @@ int main(int argc, char* argv[])
         method_code = atoi(argv[2]);
     }
 
-    //com-Youtube, belgium_osm.mtx;
     if ((file = fopen(filepath, "r")) == NULL) {
         perror("Error in file open");
         exit(1);

@@ -6,10 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-//xcrun ../OpenCilk-10.0.1-Darwin/bin/clang
-//-Wall -g triangles_multi.c mmio.c sequential_triangles_counting.c
-//multithreading_triangles_counting.c coo2csc.c opencilk_triangles_counting.c
-//-lpthread -fopencilk -o triangles_multi
+
 int opencilk_counting(uint32_t* csc_row,
     uint32_t* csc_col,
     uint32_t nz,

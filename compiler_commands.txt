@@ -1,0 +1,24 @@
+## Compiling Tools
+
+###Compiled and executed using Macintosh System
+
+
+### Sequential
+
+gcc -D METHOD=1 -g main.c ../include/mmio.c ../include/sequential_triangles_counting.c ../include/coo2csc.c ../include/timer.c -o main
+./main path 1
+
+### Pthreads
+
+gcc -D METHOD=2 -g main.c ../include/mmio.c ../include/multithreading_triangles_counting.c ../include/coo2csc.c ../include/timer.c -lpthread -o main
+./main path 2
+
+### OpenCilk
+
+xcrun ../../OpenCilk-10.0.1-Darwin/bin/clang -D METHOD=3 -g main.c ../include/mmio.c ../include/coo2csc.c ../include/opencilk_triangles_counting.c ../include/timer.c -fopencilk -lpthread -o main
+NCILKWORKERS=N ./main path 3
+
+### OpenMP
+
+/usr/local/opt/llvm/bin/clang -L/usr/local/opt/llvm/lib -D METHOD=4 -g main.c ../include/mmio.c ../include/coo2csc.c ../include/openmp_triangles_counting.c ../include/timer.c -fopenmp -o main
+./main path 4
